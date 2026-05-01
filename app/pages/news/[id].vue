@@ -5,7 +5,8 @@ const id = route.params.id as string
 const { data, status, error } = await useFetchArticleById(id)
 
 const article = computed(() => data.value?.results?.[0] ?? null)
-const { setContext } = useLoginModal()
+const { user } = useAuth()
+const { open, setContext } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
@@ -24,6 +25,15 @@ onMounted(() => {
 onUnmounted(() => {
   setContext(null)
 })
+
+function handleReadMoreClick(event: MouseEvent) {
+  if (user.value) {
+    return
+  }
+
+  event.preventDefault()
+  open()
+}
 </script>
 
 <template>
@@ -85,6 +95,7 @@ onUnmounted(() => {
         target="_blank"
         rel="noopener noreferrer"
         class="article-detail__read-more"
+        @click="handleReadMoreClick"
       >
         Read full article
         <span>→</span>
