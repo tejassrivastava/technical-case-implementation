@@ -6,7 +6,7 @@ const { data, status, error } = await useFetchArticleById(id)
 
 const article = computed(() => data.value?.results?.[0] ?? null)
 const { user } = useAuth()
-const { isOpen, open, setContext } = useLoginModal()
+const { isOpen, open, setContext, setRedirectUrl } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
@@ -34,6 +34,9 @@ function handleReadMoreClick(event: MouseEvent) {
   }
 
   event.preventDefault()
+  if (article.value?.link) {
+    setRedirectUrl(article.value.link)
+  }
   open(article.value?.title ?? undefined)
 }
 </script>

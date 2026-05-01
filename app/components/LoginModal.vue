@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthUser } from '~/types/auth'
 
-const { isOpen, contextMessage, close } = useLoginModal()
+const { isOpen, contextMessage, redirectUrl, clearRedirectUrl, close } = useLoginModal()
 const { login } = useAuth()
 
 const email = ref('')
@@ -23,9 +23,15 @@ const handleSubmit = async () => {
     })
 
     login(response.user)
+    const pendingRedirectUrl = redirectUrl.value
+    clearRedirectUrl()
     close()
-  } catch (err: any) {
-    error.value = err.message || 'An error occurred during login'
+
+    if (pendingRedirectUrl && import.meta.client) {
+      window.open(pendingRedirectUrl, '_blank', 'noopener,noreferrer')
+    }
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'An error occurred during login'
   } finally {
     isSubmitting.value = false
   }

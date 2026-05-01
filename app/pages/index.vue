@@ -1,31 +1,66 @@
 <script setup lang="ts">
-const pageStack = ref<(string | null)[]>([null])
-const currentPageIndex = ref(0)
+import type { LocationQueryValue } from 'vue-router'
 
-const currentToken = computed(() => pageStack.value[currentPageIndex.value])
+const route = useRoute()
+const router = useRouter()
 
-const { data, status, error } = await useFetchArticles(currentToken)
+function normalizeQueryToken(value: LocationQueryValue | LocationQueryValue[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return normalizeQueryToken(value[0])
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmedValue = value.trim()
+  return trimmedValue.length > 0 ? trimmedValue : null
+}
+
+const pageToken = computed<string | null | undefined>({
+  get() {
+    return normalizeQueryToken(route.query.pageToken)
+  },
+  set(value) {
+    const normalizedValue = normalizeQueryToken(value)
+    const currentValue = normalizeQueryToken(route.query.pageToken)
+
+    if (normalizedValue === currentValue) {
+      return
+    }
+
+    const nextQuery = { ...route.query }
+
+    if (normalizedValue) {
+      nextQuery.pageToken = normalizedValue
+    } else {
+      delete nextQuery.pageToken
+    }
+
+    void router.push({ query: nextQuery })
+  },
+})
+
+const { data, status, error } = await useFetchArticles(pageToken)
 
 const articles = computed(() => {
   if (data.value?.status !== 'success') return []
   return data.value.results
 })
 
-const canGoNext = computed(() => !!data.value?.nextPage)
-const canGoPrev = computed(() => currentPageIndex.value > 0)
+const isPaginationReady = computed(() => status.value === 'success')
+const canGoNext = computed(() => isPaginationReady.value && !!data.value?.nextPage)
+const canGoPrev = computed(() => isPaginationReady.value && !!pageToken.value)
 
 function goNext() {
-  const nextToken = data.value?.nextPage
+  const nextToken = normalizeQueryToken(data.value?.nextPage)
   if (!nextToken) return
-  if (currentPageIndex.value === pageStack.value.length - 1) {
-    pageStack.value = [...pageStack.value, nextToken]
-  }
-  currentPageIndex.value++
+  pageToken.value = nextToken
 }
 
 function goPrev() {
-  if (currentPageIndex.value === 0) return
-  currentPageIndex.value--
+  if (!pageToken.value) return
+  pageToken.value = null
 }
 
 useSeoMeta({
@@ -61,14 +96,14 @@ useSeoMeta({
           :article="article"
         />
       </div>
-
-      <ThePagination
-        :can-go-prev="canGoPrev"
-        :can-go-next="canGoNext"
-        @prev="goPrev"
-        @next="goNext"
-      />
     </div>
+
+    <ThePagination
+      :can-go-prev="canGoPrev"
+      :can-go-next="canGoNext"
+      @prev="goPrev"
+      @next="goNext"
+    />
   </div>
 </template>
 
