@@ -5,8 +5,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     authEmail: '',
     authPassword: '',
-    public: {
-      newsApiKey: '',
-    },
+    newsApiKey: '',
+    public: {},
   },
 })

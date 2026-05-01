@@ -2,14 +2,16 @@
 const route = useRoute()
 const id = route.params.id as string
 
-const { data, status } = await useFetchArticleById(id)
+const { data, status, error } = await useFetchArticleById(id)
 
-const article = computed(() => data.value?.results[0]!)
+const article = computed(() => data.value?.results?.[0] ?? null)
 const { setContext } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
+  ogTitle: () => article.value?.title ?? 'Article',
   description: () => article.value?.description ?? '',
+  ogDescription: () => article.value?.description ?? '',
   ogImage: () => article.value?.image_url ?? undefined,
 })
 
@@ -97,6 +99,8 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .article-detail {
   max-width: 780px;
   margin: 0 auto;
@@ -231,7 +235,7 @@ onUnmounted(() => {
 
 .skeleton {
   border-radius: 6px;
-  background: linear-gradient(90deg, #e5e7eb 25%, lighten(#e5e7eb, 3%) 50%, #e5e7eb 75%);
+  background: linear-gradient(90deg, #e5e7eb 25%, color.adjust(#e5e7eb, $lightness: 3%) 50%, #e5e7eb 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 

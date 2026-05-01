@@ -4,7 +4,7 @@ const currentPageIndex = ref(0)
 
 const currentToken = computed(() => pageStack.value[currentPageIndex.value])
 
-const { data, status } = await useFetchArticles(currentToken)
+const { data, status, error } = await useFetchArticles(currentToken)
 
 const articles = computed(() => {
   if (data.value?.status !== 'success') return []
@@ -30,7 +30,9 @@ function goPrev() {
 
 useSeoMeta({
   title: 'NewsHub — Latest News',
+  ogTitle: 'NewsHub — Latest News',
   description: 'Stay up to date with the latest news from around the world.',
+  ogDescription: 'Stay up to date with the latest news from around the world.',
 })
 </script>
 
@@ -71,6 +73,8 @@ useSeoMeta({
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .news-list__header {
   margin-bottom: 40px;
 }
@@ -115,7 +119,7 @@ useSeoMeta({
 .skeleton-card {
   height: 340px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #e5e7eb 25%, lighten(#e5e7eb, 3%) 50%, #e5e7eb 75%);
+  background: linear-gradient(90deg, #e5e7eb 25%, color.adjust(#e5e7eb, $lightness: 3%) 50%, #e5e7eb 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
