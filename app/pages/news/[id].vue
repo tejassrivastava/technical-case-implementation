@@ -6,7 +6,7 @@ const { data, status, error } = await useFetchArticleById(id)
 
 const article = computed(() => data.value?.results?.[0] ?? null)
 const { user } = useAuth()
-const { open, setContext } = useLoginModal()
+const { isOpen, open, setContext } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
@@ -16,10 +16,12 @@ useSeoMeta({
   ogImage: () => article.value?.image_url ?? undefined,
 })
 
-onMounted(() => {
-  if (article.value?.title) {
-    setContext(article.value.title)
+watchEffect(() => {
+  if (!isOpen.value) {
+    return
   }
+
+  setContext(article.value?.title ?? null)
 })
 
 onUnmounted(() => {
@@ -32,7 +34,7 @@ function handleReadMoreClick(event: MouseEvent) {
   }
 
   event.preventDefault()
-  open()
+  open(article.value?.title ?? undefined)
 }
 </script>
 
