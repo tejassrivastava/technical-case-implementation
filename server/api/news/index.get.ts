@@ -1,17 +1,9 @@
 import type { NewsApiResponse } from '~/types/news'
 
 // Cache each paginated response briefly so SSR and hydration reuse the same payload.
-export default defineCachedEventHandler(async (event): Promise<NewsApiResponse> => {
+const cachedNewsHandler = defineCachedEventHandler(async (event): Promise<NewsApiResponse> => {
   const config = useRuntimeConfig()
   const query = getQuery(event)
-
-  if (!config.newsApiBaseUrl || !config.newsApiKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Missing News API configuration',
-    })
-  }
-
   const baseUrl = config.newsApiBaseUrl.replace(/\/$/, '')
 
   const params = new URLSearchParams()
@@ -28,4 +20,17 @@ export default defineCachedEventHandler(async (event): Promise<NewsApiResponse> 
   return response
 }, {
   maxAge: 60,
+})
+
+export default defineEventHandler(async (event): Promise<NewsApiResponse> => {
+  const config = useRuntimeConfig()
+
+  if (!config.newsApiBaseUrl || !config.newsApiKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Missing News API configuration',
+    })
+  }
+
+  return cachedNewsHandler(event)
 })
