@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { user, logout } = useAuth()
+const { open } = useLoginModal()
+</script>
+
 <template>
   <header class="navbar">
     <div class="navbar__inner">
@@ -11,10 +16,21 @@
           Home
         </NuxtLink>
       </nav>
-
-      <button class="navbar__login-btn">
-        Login
-      </button>
+      <ClientOnly>
+      <template v-if="!user">
+        <button class="navbar__login-btn" @click="open()">
+          Login
+        </button>
+      </template>
+      <template v-else>
+        <div class="navbar__user">
+          <span class="navbar__user-name">{{ user.name }}</span>
+          <button class="navbar__logout-btn" @click="logout">
+            Logout
+          </button>
+        </div>
+      </template>
+      </ClientOnly>
     </div>
   </header>
 </template>
@@ -113,6 +129,38 @@
 
   &:active {
     transform: translateY(0);
+  }
+}
+
+.navbar__user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.navbar__user-name {
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.navbar__logout-btn {
+  padding: 4px 16px;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 </style>

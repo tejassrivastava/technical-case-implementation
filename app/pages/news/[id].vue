@@ -5,11 +5,22 @@ const id = route.params.id as string
 const { data, status } = await useFetchArticleById(id)
 
 const article = computed(() => data.value?.results[0]!)
+const { setContext } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
   description: () => article.value?.description ?? '',
   ogImage: () => article.value?.image_url ?? undefined,
+})
+
+onMounted(() => {
+  if (article.value?.title) {
+    setContext(article.value.title)
+  }
+})
+
+onUnmounted(() => {
+  setContext(null)
 })
 </script>
 

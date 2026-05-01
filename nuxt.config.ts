@@ -3,6 +3,8 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
   runtimeConfig: {
+    authEmail: '',
+    authPassword: '',
     public: {
       newsApiKey: '',
     },
