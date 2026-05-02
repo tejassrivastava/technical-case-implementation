@@ -3,6 +3,11 @@ import type { AuthUser } from '~/types/auth'
 const user = ref<AuthUser | null>(null)
 
 export function useAuth() {
+  const hydrate = () => {
+    const stored = localStorage.getItem('auth_user')
+    if (stored) user.value = JSON.parse(stored)
+  }
+
   const login = (userData: AuthUser) => {
     user.value = userData
     localStorage.setItem('auth_user', JSON.stringify(userData))
@@ -13,5 +18,5 @@ export function useAuth() {
     localStorage.removeItem('auth_user')
   }
 
-  return { user, login, logout }
+  return { user, hydrate, login, logout }
 }

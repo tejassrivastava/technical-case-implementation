@@ -38,7 +38,7 @@ const handleSubmit = async () => {
 }
 
 const handleBackdropClick = (e: MouseEvent) => {
-  if ((e.target as HTMLElement).classList.contains('login-modal__backdrop')) {
+  if ((e.target as HTMLElement).classList.contains('login-modal')) {
     close()
   }
 }

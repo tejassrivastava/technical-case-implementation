@@ -3,6 +3,7 @@ import type { LocationQueryValue } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+const isPageTransitioning = ref(false)
 
 function normalizeQueryToken(value: LocationQueryValue | LocationQueryValue[] | undefined): string | null {
   if (Array.isArray(value)) {
@@ -25,7 +26,7 @@ const pageToken = computed<string | null | undefined>({
     const normalizedValue = normalizeQueryToken(value)
     const currentValue = normalizeQueryToken(route.query.pageToken)
 
-    if (normalizedValue === currentValue) {
+    if (normalizedValue === currentValue || isPageTransitioning.value) {
       return
     }
 
@@ -37,7 +38,10 @@ const pageToken = computed<string | null | undefined>({
       delete nextQuery.pageToken
     }
 
-    void router.push({ query: nextQuery })
+    isPageTransitioning.value = true
+    void router.push({ query: nextQuery }).finally(() => {
+      isPageTransitioning.value = false
+    })
   },
 })
 
@@ -48,18 +52,22 @@ const articles = computed(() => {
   return data.value.results
 })
 
-const isPaginationReady = computed(() => status.value === 'success')
+const isPaginationReady = computed(() => status.value === 'success' && !isPageTransitioning.value)
 const canGoNext = computed(() => isPaginationReady.value && !!data.value?.nextPage)
 const canGoPrev = computed(() => isPaginationReady.value && !!pageToken.value)
 
 function goNext() {
+  if (status.value === 'pending' || isPageTransitioning.value) return
+
   const nextToken = normalizeQueryToken(data.value?.nextPage)
   if (!nextToken) return
+
   pageToken.value = nextToken
 }
 
 function goPrev() {
-  if (!pageToken.value) return
+  if (status.value === 'pending' || isPageTransitioning.value || !pageToken.value) return
+
   pageToken.value = null
 }
 

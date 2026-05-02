@@ -1,36 +1,45 @@
 import type { NewsApiResponse } from '~/types/news'
 
-// Cache each paginated response briefly so SSR and hydration reuse the same payload.
-const cachedNewsHandler = defineCachedEventHandler(async (event): Promise<NewsApiResponse> => {
-  const config = useRuntimeConfig()
-  const query = getQuery(event)
-  const baseUrl = config.newsApiBaseUrl.replace(/\/$/, '')
-
-  const params = new URLSearchParams()
-  params.append('apikey', config.newsApiKey)
-  params.append('size', '10')
-
-  if (query.pageToken) {
-    params.append('page', String(query.pageToken))
+const fetchNews = cachedFunction(
+  async (apiKey: string, pageToken?: string): Promise<NewsApiResponse> => {
+    const params = new URLSearchParams()
+    params.append('apikey', apiKey)
+    params.append('size', '10')
+    if (pageToken) {
+      params.append('page', pageToken)
+    }
+    return $fetch<NewsApiResponse>(
+      `https://newsdata.io/api/1/latest?${params.toString()}`
+    )
+  },
+  {
+    maxAge: 60,
+    name: 'news-list',
+    getKey: (_, pageToken) => `news-list:${pageToken ?? 'first'}`,
   }
-
-  const response = await $fetch<NewsApiResponse>(
-    `${baseUrl}/latest?${params.toString()}`
-  )
-  return response
-}, {
-  maxAge: 60,
-})
+)
 
 export default defineEventHandler(async (event): Promise<NewsApiResponse> => {
   const config = useRuntimeConfig()
 
-  if (!config.newsApiBaseUrl || !config.newsApiKey) {
+  if (!config.newsApiKey) {
     throw createError({
       statusCode: 500,
       statusMessage: 'Missing News API configuration',
     })
   }
 
-  return cachedNewsHandler(event)
+  const query = getQuery(event)
+  const pageToken = query.pageToken ? String(query.pageToken) : undefined
+
+  const result = await fetchNews(config.newsApiKey, pageToken)
+
+  if (!result) {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Failed to fetch news',
+    })
+  }
+
+  return result
 })
