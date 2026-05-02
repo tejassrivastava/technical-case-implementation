@@ -2,15 +2,43 @@
 const route = useRoute()
 const id = route.params.id as string
 
-const { data, status } = await useFetchArticleById(id)
+const { data, status, error } = await useFetchArticleById(id)
 
-const article = computed(() => data.value?.results[0]!)
+const article = computed(() => data.value?.results?.[0] ?? null)
+const { user } = useAuth()
+const { isOpen, open, setContext, setRedirectUrl } = useLoginModal()
 
 useSeoMeta({
   title: () => article.value?.title ?? 'Article',
+  ogTitle: () => article.value?.title ?? 'Article',
   description: () => article.value?.description ?? '',
+  ogDescription: () => article.value?.description ?? '',
   ogImage: () => article.value?.image_url ?? undefined,
 })
+
+watchEffect(() => {
+  if (!isOpen.value) {
+    return
+  }
+
+  setContext(article.value?.title ?? null)
+})
+
+onUnmounted(() => {
+  setContext(null)
+})
+
+function handleReadMoreClick(event: MouseEvent) {
+  if (user.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (article.value?.link) {
+    setRedirectUrl(article.value.link)
+  }
+  open(article.value?.title ?? undefined)
+}
 </script>
 
 <template>
@@ -72,6 +100,7 @@ useSeoMeta({
         target="_blank"
         rel="noopener noreferrer"
         class="article-detail__read-more"
+        @click="handleReadMoreClick"
       >
         Read full article
         <span>→</span>
@@ -86,6 +115,8 @@ useSeoMeta({
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .article-detail {
   max-width: 780px;
   margin: 0 auto;
@@ -220,7 +251,7 @@ useSeoMeta({
 
 .skeleton {
   border-radius: 6px;
-  background: linear-gradient(90deg, #e5e7eb 25%, lighten(#e5e7eb, 3%) 50%, #e5e7eb 75%);
+  background: linear-gradient(90deg, #e5e7eb 25%, color.adjust(#e5e7eb, $lightness: 3%) 50%, #e5e7eb 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 

@@ -1,24 +1,27 @@
 import type { NewsApiResponse } from '~/types/news'
 
+const DEFAULT_NEWS_RESPONSE: NewsApiResponse = {
+  status: 'pending',
+  totalResults: 0,
+  results: [],
+  nextPage: null,
+}
 
 export function useFetchArticles(pageToken: Ref<string | null | undefined>) {
-  const { public: { newsApiKey } } = useRuntimeConfig()
+  const normalizedPageToken = computed(() => pageToken.value?.trim() || null)
+  const fetchKey = computed(() => `news-articles:${normalizedPageToken.value ?? 'first'}`)
 
-  return useFetch<NewsApiResponse>(
-    () => {
-      const token = pageToken.value
-      return token
-        ? `https://newsdata.io/api/1/latest?apikey=${newsApiKey}&size=10&page=${token}`
-        : `https://newsdata.io/api/1/latest?apikey=${newsApiKey}&size=10`
+  return useFetch<NewsApiResponse>('/api/news', {
+    key: fetchKey,
+    query: computed(() => normalizedPageToken.value ? { pageToken: normalizedPageToken.value } : undefined),
+    default: () => ({ ...DEFAULT_NEWS_RESPONSE }),
+    getCachedData(key, nuxtApp) {
+      return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
     },
-    { watch: [pageToken] },
-  )
+    watch: [normalizedPageToken],
+  })
 }
 
 export function useFetchArticleById(id: string) {
-  const { public: { newsApiKey } } = useRuntimeConfig()
-
-  return useFetch<NewsApiResponse>(
-    `https://newsdata.io/api/1/latest?apikey=${newsApiKey}&id=${id}`,
-  )
+  return useFetch<NewsApiResponse>(`/api/news/${id}`)
 }
